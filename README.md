@@ -1,2 +1,21 @@
 # linear-optics
-An algorithm for simulating linear optical quantum circuits, written in C++ and Eigen
+A fast algorithm for simulating linear optical quantum circuits written in C++.
+
+Compile with the Makefile.
+
+For the GCC compiler, use command line flags
+
+  -Ofast -funroll-loops
+
+For the intel compiler, use the command line flags
+
+  -O3 -xavx -inline-forceinline -funroll-loops
+
+The linear algebra, Eigen, is required:
+
+  http://eigen.tuxfamily.org/index.php?title=Main_Page
+
+
+Any requests, suggestions, , questions, comments etc, please email
+
+  jsmith74@tulane.edu
