@@ -1,6 +1,10 @@
 # linear-optics
 A fast algorithm for simulating linear optical quantum circuits written in C++.
 
+For more details, refer to
+
+(arXiv link)
+
 Compile with the Makefile.
 
 The linear algebra, Eigen, is required:
@@ -9,6 +13,8 @@ The linear algebra, Eigen, is required:
 
 In main.cpp, we demonstrate how to use the LinearOpticalTransform object. We simulate the action of a Mach-Zehnder interferometer acting on a simple optical quantum state. Follow the comments for details.
 
-Any requests, suggestions, , questions, comments etc, please email
+Write me an email
 
-  jsmith74@tulane.edu
+jsmith74@tulane.edu
+
+Feel free to fork, change, modify etc.
