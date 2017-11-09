@@ -2,7 +2,7 @@
  *  \brief This the general algorithm for simulating a linear optical quantum circuit.
  *
  *     For more information, refer to:
- *      (DOI for this paper 2017)
+ *      https://arxiv.org/abs/1711.01319
  *
  *
  *
