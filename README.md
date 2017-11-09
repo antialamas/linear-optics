@@ -3,7 +3,7 @@ A fast algorithm for simulating linear optical quantum circuits written in C++.
 
 For more details and author contact information, refer to
 
-(arXiv link)
+https://arxiv.org/abs/1711.01319
 
 Compile with the included Makefile.
 
