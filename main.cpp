@@ -6,7 +6,7 @@
  *
  *
  *     For more information, refer to:
- *      (DOI for this paper 2017)
+ *      https://arxiv.org/abs/1711.01319
  *
  *
  *     Here, we construct the evolution operator A(U) for a simple Mach-Zehnder interferometer; we apply a phase shift
