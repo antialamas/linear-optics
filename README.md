@@ -5,6 +5,10 @@ For more details and author contact information, refer to
 
 https://arxiv.org/abs/1711.01319
 
+or
+
+https://journals.aps.org/pra/abstract/10.1103/PhysRevA.97.012320
+
 Compile with the included Makefile.
 
 The linear algebra, Eigen, is required:
