@@ -21,38 +21,48 @@ void LinearOpticalTransform::setA(Eigen::MatrixXcd& U){
 
     for(int i=0;i<A.rows();i++){
 
-        A.row(i) = Eigen::VectorXcd::Zero(A.cols());
-
-        do{
-
-            for(int j=0;j<A.cols();j++){
-
-                std::complex<double> Uprod(1.0,0.0);
-
-                for(int k=0;k<m[j].size();k++){
+        if( useRysers[i] == true ){
 
 
-                    Uprod *= U( m[j][k],mPrime[i][k] );
+
+        }
+
+        else{
+
+            A.row(i) = Eigen::VectorXcd::Zero(A.cols());
+
+            do{
+
+                for(int j=0;j<A.cols();j++){
+
+                    std::complex<double> Uprod(1.0,0.0);
+
+                    for(int k=0;k<m[j].size();k++){
+
+
+                        Uprod *= U( m[j][k],mPrime[i][k] );
+
+                    }
+
+                    A(i,j) += Uprod;
 
                 }
 
-                A(i,j) += Uprod;
+            } while( std::next_permutation( mPrime[i].begin(), mPrime[i].end() ) );
+
+            double bosonNum = 1.0;
+
+            for(int p=0;p<U.rows();p++) bosonNum *= factorial[ nPrime[i][p] ];
+
+            for(int j=0;j<A.cols();j++){
+
+                double bosonDen = 1.0;
+
+                for(int p=0;p<U.rows();p++) bosonDen *= factorial[ n[j][p] ];
+
+                A(i,j) *= sqrt( bosonNum/bosonDen );
 
             }
-
-        } while( std::next_permutation( mPrime[i].begin(), mPrime[i].end() ) );
-
-        double bosonNum = 1.0;
-
-        for(int p=0;p<U.rows();p++) bosonNum *= factorial[ nPrime[i][p] ];
-
-        for(int j=0;j<A.cols();j++){
-
-            double bosonDen = 1.0;
-
-            for(int p=0;p<U.rows();p++) bosonDen *= factorial[ n[j][p] ];
-
-            A(i,j) *= sqrt( bosonNum/bosonDen );
 
         }
 
@@ -106,7 +116,28 @@ void LinearOpticalTransform::initializeCircuit(Eigen::MatrixXi& inBasis, Eigen::
 
     for(int i=0;i<factorial.size();i++) factorial[i] = doublefactorial(i);
 
+    useRysers.resize( outBasis.rows() );
+
+    for(int i=0;i<outBasis.rows();i++){
+
+        if( std::pow(2,photons) < numbPermutations(i,photons) ) useRysers[i] = true;
+        else useRysers[i] = false;
+
+    }
+
     return;
+
+}
+
+int LinearOpticalTransform::numbPermutations(int& i,int& photons){
+
+    int output = factorial[photons];
+
+    for(int j=0;j<nPrime[i].size();j++) output /= factorial[ nPrime[i][j] ];
+
+    assert( false ); // UP TO HERE, CHECK THAT PERMUTATION NUMBER IS CORRECT.
+
+    return output;
 
 }
 
@@ -132,7 +163,7 @@ void LinearOpticalTransform::setmVec(std::vector<int>& m, std::vector<int>& n){
 template <typename T>
 void LinearOpticalTransform::printVec(std::vector<T>& a){
 
-    for(int i=0;i<a.size();i++) std::cout << a[i] << "\t";
+    for(int i=0;i<a.size();i++) std::cout << a[i] << " ";
 
     std::cout << std::endl;
 

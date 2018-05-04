@@ -26,8 +26,11 @@ class LinearOpticalTransform{
 
         template <typename T>
         void printVec(std::vector<T>& a);
+        int numbPermutations(int& i,int& photons);
 
         double doublefactorial(int x);
+
+        std::vector<bool> useRysers;
 
 
 };

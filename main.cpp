@@ -17,35 +17,27 @@
  */
 
 #include "LinearOpticalTransform.h"
-#define PI 3.141592653589793
+#include "omp.h"
 
 void printState(Eigen::VectorXcd& vec,Eigen::MatrixXi& basis);
+void setToFullHilbertSpace(const int& subPhotons, const int& subModes,Eigen::MatrixXi& nv);
 
 int main(){
 
     /** Establish number of photons and modes and input and output Fock basis  */
 
-        int photons = 2;
-        int modes = 4;
+        int photons = 8;
+        int modes = 12;
 
         Eigen::MatrixXi inBasis(4,modes);
-        Eigen::MatrixXi outBasis(10,modes);
+        Eigen::MatrixXi outBasis;
 
-        inBasis << 2,0,0,0,
-                   0,2,0,0,
-                   0,0,2,0,
-                   0,0,0,2;
+        inBasis << 1,1,1,1,1,1,0,0,1,0,1,0,
+                   1,1,1,1,1,1,0,0,0,1,0,1,
+                   1,1,1,1,1,1,0,0,1,0,0,1,
+                   1,1,1,1,1,1,0,0,0,1,1,0;
 
-        outBasis << 2,0,0,0,
-                    1,1,0,0,
-                    1,0,1,0,
-                    1,0,0,1,
-                    0,2,0,0,
-                    0,1,1,0,
-                    0,1,0,1,
-                    0,0,2,0,
-                    0,0,1,1,
-                    0,0,0,2;
+        setToFullHilbertSpace(photons,modes,outBasis);
 
     /** Initialize the LinearOpticalTransform object */
 
@@ -55,61 +47,94 @@ int main(){
 
     /** Set the Mach-Zehnder interferometer */
 
-        Eigen::MatrixXcd U1(modes,modes);
-        Eigen::MatrixXcd U2(modes,modes);
-
-        std::complex<double> I(0.0,1.0);
-
-        U1 << exp( I * PI /3.0),          0,      0,      0,
-                            0,            1,      0,      0,
-                            0,            0,      1,      0,
-                            0,            0,      0,      1;
-
-        U2 << cos( PI/4.0 ),  sin( PI/4.0 ),      0,      0,
-             -sin( PI/4.0 ),  cos( PI/4.0 ),      0,      0,
-                        0,            0,          1,      0,
-                        0,            0,          0,      1;
-
-
-        Eigen::MatrixXcd U;
-
-        U = U1 * U2;
+        Eigen::MatrixXcd U = Eigen::MatrixXcd::Random(modes,modes);
 
     /** Construct A(U) */
 
+        double startTime = omp_get_wtime();
+
         LOCircuit.setA(U);
 
-    /** Simulate the the evolution of the quantum state 0.5 * |2,0,0,0> + 0.5 * |0,2,0,0> + 0.5 * |0,0,2,0> + 0.5 * |0,0,0,2>
-        through the Mach Zehnder interferometer */
+        double endTime = omp_get_wtime();
 
-        Eigen::VectorXcd psi(4);
+        std::cout << "Running time: " << endTime - startTime << std::endl << std::endl;
 
-        psi << 0.5,
-               0.5,
-               0.5,
-               0.5;
+        return 0;
 
-        Eigen::VectorXcd psiPrime(10);
-
-        psiPrime = LOCircuit.A * psi;
-
-    /** Print Results */
-
-        std::cout << "Input State:\n\n";
-
-        printState(psi,inBasis);
-
-        std::cout << "Output State:\n\n";
-
-        printState(psiPrime,outBasis);
-
-        std::cout << "A(U):\n\n";
-
-        std::cout << LOCircuit.A << std::endl << std::endl;
+}
 
 
-    return 0;
 
+inline double doublefactorial(int x){
+
+    assert(x < 171);
+
+    double total=1.0;
+    if (x>=0){
+        for(int i=x;i>0;i--){
+            total=i*total;
+        }
+    }
+    else{
+        std::cout << "invalid factorial" << std::endl;
+        total=-1;
+    }
+    return total;
+}
+
+inline int g(const int& n,const int& m){
+    if(n==0 && m==0){
+        return 0;
+    }
+    else if(n==0 && m>0){
+        return 1;
+    }
+
+    else{
+        return (int)(doublefactorial(n+m-1)/(doublefactorial(n)*doublefactorial(m-1))+0.5);
+    }
+}
+
+void setToFullHilbertSpace(const int& subPhotons, const int& subModes,Eigen::MatrixXi& nv){
+
+    if(subPhotons==0 && subModes == 0){
+
+        nv.resize(0,0);
+
+        return;
+
+    }
+
+    int markers = subPhotons + subModes - 1;
+    int myints[markers];
+    int i = 0;
+    while(i<subPhotons){
+        myints[i]=1;
+        i++;
+    }
+    while(i<markers){
+        myints[i]=0;
+        i++;
+    }
+    nv = Eigen::MatrixXi::Zero(g(subPhotons,subModes),subModes);
+    i = 0;
+    int j,k = 0;
+    do {
+        j = 0;
+        k = 0;
+        while(k<markers){
+        if(myints[k]==1){
+            nv(i,j)=nv(i,j)+1;
+        }
+        else if(myints[k]==0){
+            j++;
+        }
+
+        k++;
+        }
+        i++;
+    } while ( std::prev_permutation(myints,myints+markers) );
+    return;;
 }
 
 
