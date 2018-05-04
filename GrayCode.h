@@ -1,0 +1,6 @@
+#ifndef GRAYCODE_H_INCLUDED
+#define GRAYCODE_H_INCLUDED
+
+
+
+#endif // GRAYCODE_H_INCLUDED
