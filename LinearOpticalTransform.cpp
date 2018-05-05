@@ -39,7 +39,7 @@ void LinearOpticalTransform::rysersAlgorithm(Eigen::MatrixXcd& U,int& i){
 
     for(int j=0;j<A.cols();j++){
 
-        bool even = true;
+        bool even = ( photons + 1 ) % 2; // true;
 
         A(i,j) = 0;
 
@@ -160,7 +160,7 @@ void LinearOpticalTransform::initializeCircuit(Eigen::MatrixXi& inBasis, Eigen::
 
     for(int i=0;i<outBasis.rows();i++){
 
-        if( std::pow(2,photons) < numbPermutations(i) ) useRysers[i] = true;
+        if( std::pow(2.0,photons) < numbPermutations(i) ) useRysers[i] = true;
         else useRysers[i] = false;
 
     }
@@ -175,6 +175,15 @@ void LinearOpticalTransform::initializeCircuit(Eigen::MatrixXi& inBasis, Eigen::
 }
 
 int LinearOpticalTransform::numbPermutations(int& i){
+
+    assert( false && "UP TO HERE - FIX THIS FUNCTION SO THAT INTEGER ARITHMETIC WORKS OR WE DONT HAVE TO CYCLE THROUGH EVERYTHING");
+
+    /** JUST CHANGE THIS TO DOUBLE ARITHMETIC - NOT SURE WHY ITS WRITTEN AS INTS  */
+    /** FIX IT AND CHECK THAT ITS GIVING CORRECT RESULTS AND THAT PROPER TERMS ARE GIVEN
+        TO RYSER. THEN JUST GO THROUGH AND CHECK THAT YOU'RE GETTING THE CORRECT
+        A(U) MATRICES FOR DIFFERENT NUMBERS OF PHOTONS AND MODES. THEN PROFILE THIS
+        MAKE SURE PERFORMANCE IS BEST YOU CAN GET. THEN PORT THIS TO RUN ON COPRECESSORS
+        AND GET NEXT STEP IN BELL STATE DISCRIMINATION PROBLEM. */
 
     int output = factorial[photons] + 0.5;
 

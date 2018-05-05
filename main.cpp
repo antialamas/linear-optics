@@ -29,13 +29,16 @@ int main(){
 
     /** Establish number of photons and modes and input and output Fock basis  */
 
-        int photons = 3;
-        int modes = 6;
+        int photons = 13;
+        int modes = 13;
 
         Eigen::MatrixXi inBasis,outBasis;
 
-        setToRandomBasisStates(inBasis,photons,modes,4);
-        setToRandomBasisStates(outBasis,photons,modes,5);
+        setToRandomBasisStates(inBasis,photons,modes,1);
+        setToRandomBasisStates(outBasis,photons,modes,1);
+
+        for(int i=0;i<photons;i++) inBasis(0,i) = 1;
+        for(int i=0;i<photons;i++) outBasis(0,i) = 1;
 
         std::cout << inBasis << std::endl << std::endl;
         std::cout << outBasis << std::endl << std::endl;
@@ -55,8 +58,6 @@ int main(){
         H *= std::complex<double>(0.0,1.0);
 
         Eigen::MatrixXcd U = H.exp();
-
-        std::cout << U << std::endl << std::endl;
 
     /** Construct A(U) */
 
@@ -81,6 +82,8 @@ void setToRandomBasisStates(Eigen::MatrixXi& basis,int photons,int modes,int bas
     for(int i=0;i<basisDim;i++) for(int j=0;j<modes;j++){
 
         basis(i,j) = rand() % ( 1 + photons - basis.row(i).sum() );
+
+	if(j==modes-1) basis(i,j) += photons - basis.row(i).sum();
 
     }
 
