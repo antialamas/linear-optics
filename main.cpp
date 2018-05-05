@@ -18,26 +18,27 @@
 
 #include "LinearOpticalTransform.h"
 #include "omp.h"
+#include <unsupported/Eigen/MatrixFunctions>
 
 void printState(Eigen::VectorXcd& vec,Eigen::MatrixXi& basis);
 void setToFullHilbertSpace(const int& subPhotons, const int& subModes,Eigen::MatrixXi& nv);
+void setToRandomBasisStates(Eigen::MatrixXi& basis,int photons,int modes,int basisDim);
+
 
 int main(){
 
     /** Establish number of photons and modes and input and output Fock basis  */
 
-        int photons = 8;
-        int modes = 12;
+        int photons = 3;
+        int modes = 6;
 
-        Eigen::MatrixXi inBasis(4,modes);
-        Eigen::MatrixXi outBasis;
+        Eigen::MatrixXi inBasis,outBasis;
 
-        inBasis << 1,1,1,1,1,1,0,0,1,0,1,0,
-                   1,1,1,1,1,1,0,0,0,1,0,1,
-                   1,1,1,1,1,1,0,0,1,0,0,1,
-                   1,1,1,1,1,1,0,0,0,1,1,0;
+        setToRandomBasisStates(inBasis,photons,modes,4);
+        setToRandomBasisStates(outBasis,photons,modes,5);
 
-        setToFullHilbertSpace(photons,modes,outBasis);
+        std::cout << inBasis << std::endl << std::endl;
+        std::cout << outBasis << std::endl << std::endl;
 
     /** Initialize the LinearOpticalTransform object */
 
@@ -47,7 +48,15 @@ int main(){
 
     /** Set the Mach-Zehnder interferometer */
 
-        Eigen::MatrixXcd U = Eigen::MatrixXcd::Random(modes,modes);
+        Eigen::MatrixXcd H = Eigen::MatrixXcd::Random(modes,modes);
+
+        H += H.conjugate().transpose().eval();
+
+        H *= std::complex<double>(0.0,1.0);
+
+        Eigen::MatrixXcd U = H.exp();
+
+        std::cout << U << std::endl << std::endl;
 
     /** Construct A(U) */
 
@@ -57,13 +66,27 @@ int main(){
 
         double endTime = omp_get_wtime();
 
+        std::cout << LOCircuit.A << std::endl << std::endl;
+
         std::cout << "Running time: " << endTime - startTime << std::endl << std::endl;
 
         return 0;
 
 }
 
+void setToRandomBasisStates(Eigen::MatrixXi& basis,int photons,int modes,int basisDim){
 
+    basis = Eigen::MatrixXi::Zero(basisDim,modes);
+
+    for(int i=0;i<basisDim;i++) for(int j=0;j<modes;j++){
+
+        basis(i,j) = rand() % ( 1 + photons - basis.row(i).sum() );
+
+    }
+
+    return;
+
+}
 
 inline double doublefactorial(int x){
 

@@ -6,6 +6,7 @@
 #include <vector>
 #include <algorithm>
 #include <iomanip>
+#include "GrayCode.h"
 
 class LinearOpticalTransform{
 
@@ -21,17 +22,18 @@ class LinearOpticalTransform{
 
         std::vector< std::vector<int> > n,m,nPrime,mPrime;
         std::vector<double> factorial;
-
-        void setmVec(std::vector<int>& m, std::vector<int>& n);
+        std::vector<bool> useRysers;
+        int photons;
+        GrayCode graycode;
 
         template <typename T>
         void printVec(std::vector<T>& a);
-        int numbPermutations(int& i,int& photons);
 
+        int numbPermutations(int& i);
         double doublefactorial(int x);
-
-        std::vector<bool> useRysers;
-
+        void permutationAlgorithm(Eigen::MatrixXcd& U,int& i);
+        void setmVec(std::vector<int>& m, std::vector<int>& n);
+        void rysersAlgorithm(Eigen::MatrixXcd& U,int& i);
 
 };
 

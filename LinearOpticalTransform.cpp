@@ -21,50 +21,90 @@ void LinearOpticalTransform::setA(Eigen::MatrixXcd& U){
 
     for(int i=0;i<A.rows();i++){
 
-        if( useRysers[i] == true ){
+        if( useRysers[i] == true ) rysersAlgorithm(U,i);
 
+        else permutationAlgorithm(U,i);
 
+    }
 
-        }
+    return;
 
-        else{
+}
 
-            A.row(i) = Eigen::VectorXcd::Zero(A.cols());
+void LinearOpticalTransform::rysersAlgorithm(Eigen::MatrixXcd& U,int& i){
 
-            do{
+    double bosonOutput = 1.0;
 
-                for(int j=0;j<A.cols();j++){
+    for(int p=0;p<nPrime[i].size();p++) bosonOutput *= factorial[ nPrime[i][p] ];
 
-                    std::complex<double> Uprod(1.0,0.0);
+    for(int j=0;j<A.cols();j++){
 
-                    for(int k=0;k<m[j].size();k++){
+        bool even = true;
 
+        A(i,j) = 0;
 
-                        Uprod *= U( m[j][k],mPrime[i][k] );
+        Eigen::ArrayXcd weights = Eigen::ArrayXcd::Zero( photons );
 
-                    }
+        while( graycode.iterate() ){
 
-                    A(i,j) += Uprod;
+            for(int l=0;l<photons;l++){
 
-                }
-
-            } while( std::next_permutation( mPrime[i].begin(), mPrime[i].end() ) );
-
-            double bosonNum = 1.0;
-
-            for(int p=0;p<U.rows();p++) bosonNum *= factorial[ nPrime[i][p] ];
-
-            for(int j=0;j<A.cols();j++){
-
-                double bosonDen = 1.0;
-
-                for(int p=0;p<U.rows();p++) bosonDen *= factorial[ n[j][p] ];
-
-                A(i,j) *= sqrt( bosonNum/bosonDen );
+                weights(l) +=
+                -std::pow( -1,graycode.sign ) * U( m[j][l],mPrime[i][graycode.j] );
 
             }
 
+            A(i,j) += std::pow( -1,even ) * weights.prod();
+
+            even = !even;
+
         }
+
+        double bosonInput = 1.0;
+
+        for(int p=0;p<n[j].size();p++) bosonInput *= factorial[ n[j][p] ];
+
+        A(i,j) /= sqrt( bosonInput * bosonOutput );
+
+    }
+
+    return;
+
+}
+
+void LinearOpticalTransform::permutationAlgorithm(Eigen::MatrixXcd& U,int& i){
+
+    A.row(i) = Eigen::VectorXcd::Zero(A.cols());
+
+    do{
+
+        for(int j=0;j<A.cols();j++){
+
+            std::complex<double> Uprod(1.0,0.0);
+
+            for(int k=0;k<m[j].size();k++){
+
+                Uprod *= U( m[j][k],mPrime[i][k] );
+
+            }
+
+            A(i,j) += Uprod;
+
+        }
+
+    } while( std::next_permutation( mPrime[i].begin(), mPrime[i].end() ) );
+
+    double bosonNum = 1.0;
+
+    for(int p=0;p<U.rows();p++) bosonNum *= factorial[ nPrime[i][p] ];
+
+    for(int j=0;j<A.cols();j++){
+
+        double bosonDen = 1.0;
+
+        for(int p=0;p<U.rows();p++) bosonDen *= factorial[ n[j][p] ];
+
+        A(i,j) *= sqrt( bosonNum/bosonDen );
 
     }
 
@@ -82,7 +122,7 @@ void LinearOpticalTransform::initializeCircuit(Eigen::MatrixXi& inBasis, Eigen::
     nPrime.resize( outBasis.rows() );
     mPrime.resize( outBasis.rows() );
 
-    int photons = inBasis.row(0).sum();
+    photons = inBasis.row(0).sum();
 
     for(int i=0;i<inBasis.rows();i++){
 
@@ -120,22 +160,39 @@ void LinearOpticalTransform::initializeCircuit(Eigen::MatrixXi& inBasis, Eigen::
 
     for(int i=0;i<outBasis.rows();i++){
 
-        if( std::pow(2,photons) < numbPermutations(i,photons) ) useRysers[i] = true;
+        if( std::pow(2,photons) < numbPermutations(i) ) useRysers[i] = true;
         else useRysers[i] = false;
 
     }
+
+    inBasis.resize(0,0);
+    outBasis.resize(0,0);
+
+    graycode.initialize( photons );
 
     return;
 
 }
 
-int LinearOpticalTransform::numbPermutations(int& i,int& photons){
+int LinearOpticalTransform::numbPermutations(int& i){
 
-    int output = factorial[photons];
+    int output = factorial[photons] + 0.5;
 
-    for(int j=0;j<nPrime[i].size();j++) output /= factorial[ nPrime[i][j] ];
+    int intFactorial[factorial.size()];
 
-    assert( false ); // UP TO HERE, CHECK THAT PERMUTATION NUMBER IS CORRECT.
+    for(int j=0;j<factorial.size();j++) intFactorial[j] = factorial[j] + 0.5;
+
+    for(int j=0;j<nPrime[i].size();j++) output /= intFactorial[ nPrime[i][j] ];
+
+    int counter = 0;
+
+    do{
+
+        counter++;
+
+    } while( std::next_permutation( mPrime[i].begin(),mPrime[i].end() ) );
+
+    assert( counter == output );
 
     return output;
 
