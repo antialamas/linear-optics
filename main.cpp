@@ -29,16 +29,16 @@ int main(){
 
     /** Establish number of photons and modes and input and output Fock basis  */
 
-        int photons = 13;
+        int photons = 7;
         int modes = 13;
 
         Eigen::MatrixXi inBasis,outBasis;
 
-        setToRandomBasisStates(inBasis,photons,modes,1);
-        setToRandomBasisStates(outBasis,photons,modes,1);
+        setToRandomBasisStates(inBasis,photons,modes,4);
+        setToRandomBasisStates(outBasis,photons,modes,5);
 
-        for(int i=0;i<photons;i++) inBasis(0,i) = 1;
-        for(int i=0;i<photons;i++) outBasis(0,i) = 1;
+        //for(int i=0;i<photons;i++) inBasis(0,i) = 1;
+        //for(int i=0;i<photons;i++) outBasis(0,i) = 1;
 
         std::cout << inBasis << std::endl << std::endl;
         std::cout << outBasis << std::endl << std::endl;

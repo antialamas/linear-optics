@@ -29,7 +29,7 @@ class LinearOpticalTransform{
         template <typename T>
         void printVec(std::vector<T>& a);
 
-        int numbPermutations(int& i);
+        double numbPermutations(int& i);
         double doublefactorial(int x);
         void permutationAlgorithm(Eigen::MatrixXcd& U,int& i);
         void setmVec(std::vector<int>& m, std::vector<int>& n);

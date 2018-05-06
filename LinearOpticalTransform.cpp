@@ -17,6 +17,68 @@ LinearOpticalTransform::LinearOpticalTransform(){
 
 }
 
+void LinearOpticalTransform::initializeCircuit(Eigen::MatrixXi& inBasis, Eigen::MatrixXi& outBasis){
+
+    A.resize( outBasis.rows(), inBasis.rows() );
+
+    n.resize( inBasis.rows() );
+    m.resize( inBasis.rows() );
+
+    nPrime.resize( outBasis.rows() );
+    mPrime.resize( outBasis.rows() );
+
+    photons = inBasis.row(0).sum();
+
+    for(int i=0;i<inBasis.rows();i++){
+
+        assert( inBasis.row(i).sum() == photons && "Error: Photon number must be preserved you have included some input basis states that do not have the correct number of photons." );
+
+        n.at(i).resize( inBasis.cols() );
+
+        for(int j=0;j<inBasis.cols();j++) n.at(i).at(j) = inBasis(i,j);
+
+        m.at(i).resize( photons );
+
+        setmVec( m.at(i), n.at(i) );
+
+    }
+
+    for(int i=0;i<outBasis.rows();i++){
+
+        assert( outBasis.row(i).sum() == photons && "Error: Photon number must be preserved you have included some output basis states that do not have the correct number of photons." );
+
+        nPrime.at(i).resize( outBasis.cols() );
+
+        for(int j=0;j<outBasis.cols();j++) nPrime.at(i).at(j) = outBasis(i,j);
+
+        mPrime.at(i).resize( photons );
+
+        setmVec( mPrime.at(i), nPrime.at(i) );
+
+    }
+
+    factorial.resize( photons + 1 );
+
+    for(int i=0;i<factorial.size();i++) factorial[i] = doublefactorial(i);
+
+    useRysers.resize( outBasis.rows() );
+
+    for(int i=0;i<outBasis.rows();i++){
+
+        if( std::pow(2.0,photons) < numbPermutations(i) ) useRysers[i] = true;
+        else useRysers[i] = false;
+
+    }
+
+    inBasis.resize(0,0);
+    outBasis.resize(0,0);
+
+    graycode.initialize( photons );
+
+    return;
+
+}
+
 void LinearOpticalTransform::setA(Eigen::MatrixXcd& U){
 
     for(int i=0;i<A.rows();i++){
@@ -112,96 +174,11 @@ void LinearOpticalTransform::permutationAlgorithm(Eigen::MatrixXcd& U,int& i){
 
 }
 
-void LinearOpticalTransform::initializeCircuit(Eigen::MatrixXi& inBasis, Eigen::MatrixXi& outBasis){
+double LinearOpticalTransform::numbPermutations(int& i){
 
-    A.resize( outBasis.rows(), inBasis.rows() );
+    double output = factorial[photons];
 
-    n.resize( inBasis.rows() );
-    m.resize( inBasis.rows() );
-
-    nPrime.resize( outBasis.rows() );
-    mPrime.resize( outBasis.rows() );
-
-    photons = inBasis.row(0).sum();
-
-    for(int i=0;i<inBasis.rows();i++){
-
-        assert( inBasis.row(i).sum() == photons && "Error: Photon number must be preserved you have included some input basis states that do not have the correct number of photons." );
-
-        n.at(i).resize( inBasis.cols() );
-
-        for(int j=0;j<inBasis.cols();j++) n.at(i).at(j) = inBasis(i,j);
-
-        m.at(i).resize( photons );
-
-        setmVec( m.at(i), n.at(i) );
-
-    }
-
-    for(int i=0;i<outBasis.rows();i++){
-
-        assert( outBasis.row(i).sum() == photons && "Error: Photon number must be preserved you have included some output basis states that do not have the correct number of photons." );
-
-        nPrime.at(i).resize( outBasis.cols() );
-
-        for(int j=0;j<outBasis.cols();j++) nPrime.at(i).at(j) = outBasis(i,j);
-
-        mPrime.at(i).resize( photons );
-
-        setmVec( mPrime.at(i), nPrime.at(i) );
-
-    }
-
-    factorial.resize( photons + 1 );
-
-    for(int i=0;i<factorial.size();i++) factorial[i] = doublefactorial(i);
-
-    useRysers.resize( outBasis.rows() );
-
-    for(int i=0;i<outBasis.rows();i++){
-
-        if( std::pow(2.0,photons) < numbPermutations(i) ) useRysers[i] = true;
-        else useRysers[i] = false;
-
-    }
-
-    inBasis.resize(0,0);
-    outBasis.resize(0,0);
-
-    graycode.initialize( photons );
-
-    return;
-
-}
-
-int LinearOpticalTransform::numbPermutations(int& i){
-
-    assert( false && "UP TO HERE - FIX THIS FUNCTION SO THAT INTEGER ARITHMETIC WORKS OR WE DONT HAVE TO CYCLE THROUGH EVERYTHING");
-
-    /** JUST CHANGE THIS TO DOUBLE ARITHMETIC - NOT SURE WHY ITS WRITTEN AS INTS  */
-    /** FIX IT AND CHECK THAT ITS GIVING CORRECT RESULTS AND THAT PROPER TERMS ARE GIVEN
-        TO RYSER. THEN JUST GO THROUGH AND CHECK THAT YOU'RE GETTING THE CORRECT
-        A(U) MATRICES FOR DIFFERENT NUMBERS OF PHOTONS AND MODES. THEN PROFILE THIS
-        MAKE SURE PERFORMANCE IS BEST YOU CAN GET. THEN PORT THIS TO RUN ON COPRECESSORS
-        AND GET NEXT STEP IN BELL STATE DISCRIMINATION PROBLEM. */
-
-    int output = factorial[photons] + 0.5;
-
-    int intFactorial[factorial.size()];
-
-    for(int j=0;j<factorial.size();j++) intFactorial[j] = factorial[j] + 0.5;
-
-    for(int j=0;j<nPrime[i].size();j++) output /= intFactorial[ nPrime[i][j] ];
-
-    int counter = 0;
-
-    do{
-
-        counter++;
-
-    } while( std::next_permutation( mPrime[i].begin(),mPrime[i].end() ) );
-
-    assert( counter == output );
+    for(int j=0;j<nPrime[i].size();j++) output /= factorial[ nPrime[i][j] ];
 
     return output;
 
