@@ -109,14 +109,15 @@ void LinearOpticalTransform::rysersAlgorithm(Eigen::MatrixXcd& U,int& i){
 
         while( graycode.iterate() ){
 
+            /** ========= UNROLL THIS LOOP MANUALLY FOR SPEED ===================== */
+
             for(int l=0;l<photons;l++){
 
-                weights(l) +=
-                -std::pow( -1,graycode.sign ) * U( m[j][l],mPrime[i][graycode.j] );
+                weights(l) += boolPow( graycode.sign ) * U( m[j][l],mPrime[i][graycode.j] );
 
             }
 
-            A(i,j) += std::pow( -1,even ) * weights.prod();
+            A(i,j) -= boolPow( even ) * weights.prod();
 
             even = !even;
 

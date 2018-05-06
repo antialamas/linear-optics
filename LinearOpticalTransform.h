@@ -35,7 +35,15 @@ class LinearOpticalTransform{
         void setmVec(std::vector<int>& m, std::vector<int>& n);
         void rysersAlgorithm(Eigen::MatrixXcd& U,int& i);
 
+        inline double boolPow(bool& x);
+
 };
+
+inline double LinearOpticalTransform::boolPow(bool& x){
+
+    return -1 + 2 * x;
+
+}
 
 #endif // LINEAROPTICALTRANSFORM_H_INCLUDED
 
