@@ -101,6 +101,25 @@ int main(){
 
     /** Print Results */
 
+        inBasis.resize(4,modes);
+        outBasis.resize(10,modes);
+
+        inBasis << 2,0,0,0,
+                   0,2,0,0,
+                   0,0,2,0,
+                   0,0,0,2;
+
+        outBasis << 2,0,0,0,
+                    1,1,0,0,
+                    1,0,1,0,
+                    1,0,0,1,
+                    0,2,0,0,
+                    0,1,1,0,
+                    0,1,0,1,
+                    0,0,2,0,
+                    0,0,1,1,
+                    0,0,0,2;
+
         std::cout << "Input State:\n\n";
 
         printState(psi,inBasis);
@@ -115,21 +134,6 @@ int main(){
 
 
     return 0;
-
-}
-
-
-void printState(Eigen::VectorXcd& vec,Eigen::MatrixXi& basis){
-
-    for(int i=0;i<vec.size();i++){
-
-        std::cout << vec(i) << " * |" << basis.row(i) << ">\n";
-
-    }
-
-    std::cout << std::endl;
-
-    return;
 
 }
 

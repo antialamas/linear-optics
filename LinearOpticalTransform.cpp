@@ -17,51 +17,6 @@ LinearOpticalTransform::LinearOpticalTransform(){
 
 }
 
-void LinearOpticalTransform::setA(Eigen::MatrixXcd& U){
-
-    for(int i=0;i<A.rows();i++){
-
-        A.row(i) = Eigen::VectorXcd::Zero(A.cols());
-
-        do{
-
-            for(int j=0;j<A.cols();j++){
-
-                std::complex<double> Uprod(1.0,0.0);
-
-                for(int k=0;k<m[j].size();k++){
-
-
-                    Uprod *= U( m[j][k],mPrime[i][k] );
-
-                }
-
-                A(i,j) += Uprod;
-
-            }
-
-        } while( std::next_permutation( mPrime[i].begin(), mPrime[i].end() ) );
-
-        double bosonNum = 1.0;
-
-        for(int p=0;p<U.rows();p++) bosonNum *= factorial[ nPrime[i][p] ];
-
-        for(int j=0;j<A.cols();j++){
-
-            double bosonDen = 1.0;
-
-            for(int p=0;p<U.rows();p++) bosonDen *= factorial[ n[j][p] ];
-
-            A(i,j) *= sqrt( bosonNum/bosonDen );
-
-        }
-
-    }
-
-    return;
-
-}
-
 void LinearOpticalTransform::initializeCircuit(Eigen::MatrixXi& inBasis, Eigen::MatrixXi& outBasis){
 
     A.resize( outBasis.rows(), inBasis.rows() );
@@ -72,7 +27,7 @@ void LinearOpticalTransform::initializeCircuit(Eigen::MatrixXi& inBasis, Eigen::
     nPrime.resize( outBasis.rows() );
     mPrime.resize( outBasis.rows() );
 
-    int photons = inBasis.row(0).sum();
+    photons = inBasis.row(0).sum();
 
     for(int i=0;i<inBasis.rows();i++){
 
@@ -106,7 +61,126 @@ void LinearOpticalTransform::initializeCircuit(Eigen::MatrixXi& inBasis, Eigen::
 
     for(int i=0;i<factorial.size();i++) factorial[i] = doublefactorial(i);
 
+    useRysers.resize( outBasis.rows() );
+
+    for(int i=0;i<outBasis.rows();i++){
+
+        if( std::pow(2.0,photons) < numbPermutations(i) ) useRysers[i] = true;
+        else useRysers[i] = false;
+
+    }
+
+    inBasis.resize(0,0);
+    outBasis.resize(0,0);
+
+    graycode.initialize( photons );
+
     return;
+
+}
+
+void LinearOpticalTransform::setA(Eigen::MatrixXcd& U){
+
+    for(int i=0;i<A.rows();i++){
+
+        if( useRysers[i] == true ) rysersAlgorithm(U,i);
+
+        else permutationAlgorithm(U,i);
+
+    }
+
+    return;
+
+}
+
+void LinearOpticalTransform::rysersAlgorithm(Eigen::MatrixXcd& U,int& i){
+
+    double bosonOutput = 1.0;
+
+    for(int p=0;p<nPrime[i].size();p++) bosonOutput *= factorial[ nPrime[i][p] ];
+
+    for(int j=0;j<A.cols();j++){
+
+        bool even = ( photons + 1 ) % 2; // true;
+
+        A(i,j) = 0;
+
+        Eigen::ArrayXcd weights = Eigen::ArrayXcd::Zero( photons );
+
+        while( graycode.iterate() ){
+
+            for(int l=0;l<photons;l++){
+
+                weights(l) +=
+                -std::pow( -1,graycode.sign ) * U( m[j][l],mPrime[i][graycode.j] );
+
+            }
+
+            A(i,j) += std::pow( -1,even ) * weights.prod();
+
+            even = !even;
+
+        }
+
+        double bosonInput = 1.0;
+
+        for(int p=0;p<n[j].size();p++) bosonInput *= factorial[ n[j][p] ];
+
+        A(i,j) /= sqrt( bosonInput * bosonOutput );
+
+    }
+
+    return;
+
+}
+
+void LinearOpticalTransform::permutationAlgorithm(Eigen::MatrixXcd& U,int& i){
+
+    A.row(i) = Eigen::VectorXcd::Zero(A.cols());
+
+    do{
+
+        for(int j=0;j<A.cols();j++){
+
+            std::complex<double> Uprod(1.0,0.0);
+
+            for(int k=0;k<m[j].size();k++){
+
+                Uprod *= U( m[j][k],mPrime[i][k] );
+
+            }
+
+            A(i,j) += Uprod;
+
+        }
+
+    } while( std::next_permutation( mPrime[i].begin(), mPrime[i].end() ) );
+
+    double bosonNum = 1.0;
+
+    for(int p=0;p<U.rows();p++) bosonNum *= factorial[ nPrime[i][p] ];
+
+    for(int j=0;j<A.cols();j++){
+
+        double bosonDen = 1.0;
+
+        for(int p=0;p<U.rows();p++) bosonDen *= factorial[ n[j][p] ];
+
+        A(i,j) *= sqrt( bosonNum/bosonDen );
+
+    }
+
+    return;
+
+}
+
+double LinearOpticalTransform::numbPermutations(int& i){
+
+    double output = factorial[photons];
+
+    for(int j=0;j<nPrime[i].size();j++) output /= factorial[ nPrime[i][j] ];
+
+    return output;
 
 }
 
@@ -132,7 +206,7 @@ void LinearOpticalTransform::setmVec(std::vector<int>& m, std::vector<int>& n){
 template <typename T>
 void LinearOpticalTransform::printVec(std::vector<T>& a){
 
-    for(int i=0;i<a.size();i++) std::cout << a[i] << "\t";
+    for(int i=0;i<a.size();i++) std::cout << a[i] << " ";
 
     std::cout << std::endl;
 
