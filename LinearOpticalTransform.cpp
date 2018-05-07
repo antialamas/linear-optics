@@ -19,8 +19,6 @@ LinearOpticalTransform::LinearOpticalTransform(){
 
 void LinearOpticalTransform::initializeCircuit(Eigen::MatrixXi& inBasis, Eigen::MatrixXi& outBasis){
 
-    A.resize( outBasis.rows(), inBasis.rows() );
-
     n.resize( inBasis.rows() );
     m.resize( inBasis.rows() );
 
@@ -75,17 +73,33 @@ void LinearOpticalTransform::initializeCircuit(Eigen::MatrixXi& inBasis, Eigen::
 
     graycode.initialize( photons );
 
+    bellStates = Eigen::Matrix4d::Zero();
+
+    bellStates(0,0) = 1/sqrt(2.0);
+    bellStates(1,0) = 1/sqrt(2.0);
+
+    bellStates(0,1) = 1/sqrt(2.0);
+    bellStates(1,1) = -1/sqrt(2.0);
+
+    bellStates(2,2) = 1/sqrt(2.0);
+    bellStates(3,2) = 1/sqrt(2.0);
+
+    bellStates(2,3) = 1/sqrt(2.0);
+    bellStates(3,3) = -1/sqrt(2.0);
+
     return;
 
 }
 
-void LinearOpticalTransform::setA(Eigen::MatrixXcd& U){
+void LinearOpticalTransform::setMutualInformation(Eigen::MatrixXcd& U){
 
-    for(int i=0;i<A.rows();i++){
+    mutualInformation = 0;
 
-        if( useRysers[i] == true ) rysersAlgorithm(U,i);
+    for(int y=0;y<useRysers.size();y++){
 
-        else permutationAlgorithm(U,i);
+        if( useRysers[y] == true ) rysersAlgorithm(U,y);
+
+        else permutationAlgorithm(U,y);
 
     }
 
@@ -99,11 +113,11 @@ void LinearOpticalTransform::rysersAlgorithm(Eigen::MatrixXcd& U,int& i){
 
     for(int p=0;p<nPrime[i].size();p++) bosonOutput *= factorial[ nPrime[i][p] ];
 
-    for(int j=0;j<A.cols();j++){
+    Eigen::Vector4cd A = Eigen::Vector4cd::Zero(4);
+
+    for(int j=0;j<4;j++){
 
         bool even = ( photons + 1 ) % 2; // true;
-
-        A(i,j) = 0;
 
         Eigen::ArrayXcd weights = Eigen::ArrayXcd::Zero( photons );
 
@@ -117,7 +131,7 @@ void LinearOpticalTransform::rysersAlgorithm(Eigen::MatrixXcd& U,int& i){
 
             }
 
-            A(i,j) -= boolPow( even ) * weights.prod();
+            A(j) -= boolPow( even ) * weights.prod();
 
             even = !even;
 
@@ -127,9 +141,25 @@ void LinearOpticalTransform::rysersAlgorithm(Eigen::MatrixXcd& U,int& i){
 
         for(int p=0;p<n[j].size();p++) bosonInput *= factorial[ n[j][p] ];
 
-        A(i,j) /= sqrt( bosonInput * bosonOutput );
+        A(j) /= sqrt( bosonInput * bosonOutput );
 
     }
+
+    Eigen::MatrixXcd stateAmplitude = A.transpose() * bellStates;
+
+    double py[4];
+
+    py[0] = std::norm( stateAmplitude(0,0) );
+    py[1] = std::norm( stateAmplitude(0,1) );
+    py[2] = std::norm( stateAmplitude(0,2) );
+    py[3] = std::norm( stateAmplitude(0,3) );
+
+    double pytotal = py[0] + py[1] + py[2] + py[3];
+
+    if(py[0] != 0) mutualInformation += py[0] * log2( pytotal / py[0] );
+    if(py[1] != 0) mutualInformation += py[1] * log2( pytotal / py[1] );
+    if(py[2] != 0) mutualInformation += py[2] * log2( pytotal / py[2] );
+    if(py[3] != 0) mutualInformation += py[3] * log2( pytotal / py[3] );
 
     return;
 
@@ -137,11 +167,11 @@ void LinearOpticalTransform::rysersAlgorithm(Eigen::MatrixXcd& U,int& i){
 
 void LinearOpticalTransform::permutationAlgorithm(Eigen::MatrixXcd& U,int& i){
 
-    A.row(i) = Eigen::VectorXcd::Zero(A.cols());
+    Eigen::Vector4cd A = Eigen::Vector4cd::Zero(4);
 
     do{
 
-        for(int j=0;j<A.cols();j++){
+        for(int j=0;j<4;j++){
 
             std::complex<double> Uprod(1.0,0.0);
 
@@ -151,7 +181,7 @@ void LinearOpticalTransform::permutationAlgorithm(Eigen::MatrixXcd& U,int& i){
 
             }
 
-            A(i,j) += Uprod;
+            A(j) += Uprod;
 
         }
 
@@ -161,15 +191,31 @@ void LinearOpticalTransform::permutationAlgorithm(Eigen::MatrixXcd& U,int& i){
 
     for(int p=0;p<U.rows();p++) bosonNum *= factorial[ nPrime[i][p] ];
 
-    for(int j=0;j<A.cols();j++){
+    for(int j=0;j<4;j++){
 
         double bosonDen = 1.0;
 
         for(int p=0;p<U.rows();p++) bosonDen *= factorial[ n[j][p] ];
 
-        A(i,j) *= sqrt( bosonNum/bosonDen );
+        A(j) *= sqrt( bosonNum/bosonDen );
 
     }
+
+    Eigen::MatrixXcd stateAmplitude = A.transpose() * bellStates;
+
+    double py[4];
+
+    py[0] = std::norm( stateAmplitude(0,0) );
+    py[1] = std::norm( stateAmplitude(0,1) );
+    py[2] = std::norm( stateAmplitude(0,2) );
+    py[3] = std::norm( stateAmplitude(0,3) );
+
+    double pytotal = py[0] + py[1] + py[2] + py[3];
+
+    if(py[0] != 0) mutualInformation += py[0] * log2( pytotal / py[0] );
+    if(py[1] != 0) mutualInformation += py[1] * log2( pytotal / py[1] );
+    if(py[2] != 0) mutualInformation += py[2] * log2( pytotal / py[2] );
+    if(py[3] != 0) mutualInformation += py[3] * log2( pytotal / py[3] );
 
     return;
 

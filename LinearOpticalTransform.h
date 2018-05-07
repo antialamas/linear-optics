@@ -14,9 +14,9 @@ class LinearOpticalTransform{
 
         LinearOpticalTransform();
         void initializeCircuit(Eigen::MatrixXi& inBasis, Eigen::MatrixXi& outBasis);
-        void setA(Eigen::MatrixXcd& U);
+        void setMutualInformation(Eigen::MatrixXcd& U);
 
-        Eigen::MatrixXcd A;
+        double mutualInformation;
 
     private:
 
@@ -36,6 +36,8 @@ class LinearOpticalTransform{
         void rysersAlgorithm(Eigen::MatrixXcd& U,int& i);
 
         inline double boolPow(bool& x);
+
+        Eigen::Matrix4d bellStates;
 
 };
 
