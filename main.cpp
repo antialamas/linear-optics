@@ -31,107 +31,31 @@ int main(){
 
     /** Establish number of photons and modes and input and output Fock basis  */
 
-        int photons = 2;
-        int modes = 4;
+    int ancillaPhotons = 2;
+    int ancillaModes = 2;
 
-        Eigen::MatrixXi inBasis(4,modes);
-        Eigen::MatrixXi outBasis(10,modes);
+    Eigen::MatrixXcd H = Eigen::MatrixXcd::Random(ancillaModes+4,ancillaModes+4);
 
-        inBasis << 2,0,0,0,
-                   0,2,0,0,
-                   0,0,2,0,
-                   0,0,0,2;
+    H += H.conjugate().transpose().eval();
 
-        outBasis << 2,0,0,0,
-                    1,1,0,0,
-                    1,0,1,0,
-                    1,0,0,1,
-                    0,2,0,0,
-                    0,1,1,0,
-                    0,1,0,1,
-                    0,0,2,0,
-                    0,0,1,1,
-                    0,0,0,2;
+    H *= std::complex<double>(0.0,1.0);
 
-    /** Initialize the LinearOpticalTransform object */
+    Eigen::MatrixXcd U = H.exp();
 
-        LinearOpticalTransform LOCircuit;
+    std::cout << U << std::endl;
 
-        LOCircuit.initializeCircuit(inBasis,outBasis);
+    LinearOpticalTransform LOCircuit;
 
-    /** Set the Mach-Zehnder interferometer */
+    LOCircuit.initializeCircuit(ancillaPhotons,ancillaModes);
 
-        Eigen::MatrixXcd U1(modes,modes);
-        Eigen::MatrixXcd U2(modes,modes);
+    double startTime = omp_get_wtime();
 
-        std::complex<double> I(0.0,1.0);
+    LOCircuit.setMutualInformation(U);
 
-        U1 << exp( I * PI /3.0),          0,      0,      0,
-                            0,            1,      0,      0,
-                            0,            0,      1,      0,
-                            0,            0,      0,      1;
+    double endTime = omp_get_wtime();
 
-        U2 << cos( PI/4.0 ),  sin( PI/4.0 ),      0,      0,
-             -sin( PI/4.0 ),  cos( PI/4.0 ),      0,      0,
-                        0,            0,          1,      0,
-                        0,            0,          0,      1;
-
-
-        Eigen::MatrixXcd U;
-
-        U = U1 * U2;
-
-    /** Construct A(U) */
-
-        LOCircuit.setA(U);
-
-    /** Simulate the the evolution of the quantum state 0.5 * |2,0,0,0> + 0.5 * |0,2,0,0> + 0.5 * |0,0,2,0> + 0.5 * |0,0,0,2>
-        through the Mach Zehnder interferometer */
-
-        Eigen::VectorXcd psi(4);
-
-        psi << 0.5,
-               0.5,
-               0.5,
-               0.5;
-
-        Eigen::VectorXcd psiPrime(10);
-
-        psiPrime = LOCircuit.A * psi;
-
-    /** Print Results */
-
-        inBasis.resize(4,modes);
-        outBasis.resize(10,modes);
-
-        inBasis << 2,0,0,0,
-                   0,2,0,0,
-                   0,0,2,0,
-                   0,0,0,2;
-
-        outBasis << 2,0,0,0,
-                    1,1,0,0,
-                    1,0,1,0,
-                    1,0,0,1,
-                    0,2,0,0,
-                    0,1,1,0,
-                    0,1,0,1,
-                    0,0,2,0,
-                    0,0,1,1,
-                    0,0,0,2;
-
-        std::cout << "Input State:\n\n";
-
-        printState(psi,inBasis);
-
-        std::cout << "Output State:\n\n";
-
-        printState(psiPrime,outBasis);
-
-        std::cout << "A(U):\n\n";
-
-        std::cout << LOCircuit.A << std::endl << std::endl;
-
+    std::cout << "Running time: " << endTime - startTime << std::endl;
+    std::cout << "H(X:Y): " << std::setprecision(16) << 2.0 - 0.25 * LOCircuit.mutualInformation << std::endl;
 
     return 0;
 

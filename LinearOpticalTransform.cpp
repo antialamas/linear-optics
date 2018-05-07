@@ -79,6 +79,99 @@ void LinearOpticalTransform::initializeCircuit(Eigen::MatrixXi& inBasis, Eigen::
 
 }
 
+void LinearOpticalTransform::initializeCircuit(int& ancillaP,int& ancillaM){
+
+    ancillaPhotons = ancillaP;
+    ancillaModes = ancillaM;
+    int HSDimension = g( ancillaPhotons + 2,ancillaModes + 4 );
+
+    photons = ancillaPhotons + 2;
+
+    assert( ancillaModes >= ancillaPhotons );
+
+    factorial.resize( ancillaPhotons + 2 + 1 );
+
+    for(int i=0;i<factorial.size();i++) factorial[i] = doublefactorial(i);
+
+    useRysers.resize( HSDimension );
+
+    nPrime.resize( HSDimension );
+    mPrime.resize( HSDimension );
+
+    for(int i=0;i<HSDimension;i++){ nPrime.at(i).resize(ancillaModes + 4); mPrime.at(i).resize(ancillaPhotons + 2); }
+
+    setNPrimeAndMPrime(nPrime,mPrime);
+
+    for(int i=0;i<HSDimension;i++){
+
+        if( std::pow(2.0,ancillaPhotons + 2) < numbPermutations(i) ) useRysers[i] = true;
+        else useRysers[i] = false;
+
+    }
+
+    graycode.initialize( ancillaPhotons + 2 );
+
+    return;
+
+}
+
+void LinearOpticalTransform::setMutualInformation(Eigen::MatrixXcd& U){
+
+    mutualInformation = 0;
+
+    for(int y=0;y<useRysers.size();y++){
+
+        if( useRysers[y] == true ) rysersHXY(U,y);
+
+        else permutationHXY(U,y);
+
+    }
+
+    return;
+
+}
+
+void LinearOpticalTransform::rysersHXY(Eigen::MatrixXcd& U,int& y){
+
+    assert( false && "UP TO HERE - WRITE CONTRIBUTION TO MUTUAL INFORMATION WITH RYSERS");
+
+    return;
+
+}
+
+void LinearOpticalTransform::permutationHXY(Eigen::MatrixXcd& U,int& y){
+
+    std::complex<double> stateAmplitude[4];
+
+    stateAmplitude[0] = 0.0;
+    stateAmplitude[1] = 0.0;
+    stateAmplitude[2] = 0.0;
+    stateAmplitude[3] = 0.0;
+
+    double pyx[4];
+
+    do{
+
+        setStateAmplitude(stateAmplitude,U,y);
+
+    } while( std::next_permutation( mPrime[y].begin(), mPrime[y].end() ) );
+
+    normalizeStateAmplitude(stateAmplitude,y);
+
+    pyx[0] = std::norm( stateAmplitude[0] );
+    pyx[1] = std::norm( stateAmplitude[1] );
+    pyx[2] = std::norm( stateAmplitude[2] );
+    pyx[3] = std::norm( stateAmplitude[3] );
+
+    if(pyx[0] != 0.0) mutualInformation += pyx[0] * log2( ( pyx[0] + pyx[1] + pyx[2] + pyx[3] ) / pyx[0] );
+    if(pyx[1] != 0.0) mutualInformation += pyx[1] * log2( ( pyx[0] + pyx[1] + pyx[2] + pyx[3] ) / pyx[1] );
+    if(pyx[2] != 0.0) mutualInformation += pyx[2] * log2( ( pyx[0] + pyx[1] + pyx[2] + pyx[3] ) / pyx[2] );
+    if(pyx[3] != 0.0) mutualInformation += pyx[3] * log2( ( pyx[0] + pyx[1] + pyx[2] + pyx[3] ) / pyx[3] );
+
+    return;
+
+}
+
 void LinearOpticalTransform::setA(Eigen::MatrixXcd& U){
 
     for(int i=0;i<A.rows();i++){
@@ -204,6 +297,67 @@ void LinearOpticalTransform::setmVec(std::vector<int>& m, std::vector<int>& n){
     return;
 }
 
+void LinearOpticalTransform::setNPrimeAndMPrime(std::vector< std::vector<int> >& nPrime,std::vector< std::vector<int> >& mPrime){
+
+    Eigen::MatrixXi outBasis;
+
+    setToFullHilbertSpace( ancillaPhotons + 2,ancillaModes + 4,outBasis );
+
+    for(int i=0;i<outBasis.rows();i++){
+
+        for(int j=0;j<nPrime.at(i).size();j++) nPrime.at(i).at(j) = outBasis(i,j);
+
+        setmVec(mPrime.at(i),nPrime.at(i));
+
+    }
+
+    return;
+
+}
+
+
+void LinearOpticalTransform::setToFullHilbertSpace(int subPhotons, int subModes,Eigen::MatrixXi& nv){
+
+    if(subPhotons==0 && subModes == 0){
+
+        nv.resize(0,0);
+
+        return;
+
+    }
+
+    int markers = subPhotons + subModes - 1;
+    int myints[markers];
+    int i = 0;
+    while(i<subPhotons){
+        myints[i]=1;
+        i++;
+    }
+    while(i<markers){
+        myints[i]=0;
+        i++;
+    }
+    nv = Eigen::MatrixXi::Zero(g(subPhotons,subModes),subModes);
+    i = 0;
+    int j,k = 0;
+    do {
+        j = 0;
+        k = 0;
+        while(k<markers){
+        if(myints[k]==1){
+            nv(i,j)=nv(i,j)+1;
+        }
+        else if(myints[k]==0){
+            j++;
+        }
+
+        k++;
+        }
+        i++;
+    } while ( std::prev_permutation(myints,myints+markers) );
+    return;;
+}
+
 template <typename T>
 void LinearOpticalTransform::printVec(std::vector<T>& a){
 
@@ -214,6 +368,20 @@ void LinearOpticalTransform::printVec(std::vector<T>& a){
     return;
 
 }
+
+int LinearOpticalTransform::g(const int& n,const int& m){
+    if(n==0 && m==0){
+        return 0;
+    }
+    else if(n==0 && m>0){
+        return 1;
+    }
+
+    else{
+        return (int)(doublefactorial(n+m-1)/(doublefactorial(n)*doublefactorial(m-1))+0.5);
+    }
+}
+
 
 double LinearOpticalTransform::doublefactorial(int x){
 
