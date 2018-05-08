@@ -113,7 +113,7 @@ void LinearOpticalTransform::rysersAlgorithm(Eigen::MatrixXcd& U,int& i){
 
             for(int l=0;l<photons;l++){
 
-                weights(l) += boolPow( graycode.sign ) * U( m[j][l],mPrime[i][graycode.j] );
+                weights(l) += boolPow( graycode.sign ) * U.coeffRef( m[j][l],mPrime[i][graycode.j] );
 
             }
 
@@ -147,7 +147,7 @@ void LinearOpticalTransform::permutationAlgorithm(Eigen::MatrixXcd& U,int& i){
 
             for(int k=0;k<m[j].size();k++){
 
-                Uprod *= U( m[j][k],mPrime[i][k] );
+                Uprod *= U.coeffRef( m[j][k],mPrime[i][k] );
 
             }
 
