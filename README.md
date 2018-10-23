@@ -1,3 +1,5 @@
+This is a fork from https://github.com/jsmith74/linear-optics.git
+
 # linear-optics
 A fast, hybrid algorithm for simulating linear optical quantum circuits written in C++.
 
